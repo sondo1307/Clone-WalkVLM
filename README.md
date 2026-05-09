@@ -1,65 +1,90 @@
-# WalkVLM: Aid Visually Impaired People Walking by Vision-Language Model
-<p align="left">
-  📄 <a href="https://arxiv.org/pdf/2412.20903" target="_blank"><b>View the Paper</b></a>
-</p>
+# WalkVLM-LR
 
-##  🚀 Introduction
+A walking assistance VLM with reduced redundancy for blind and low vision individuals.(under updating)
 
-Approximately **200 million individuals worldwide** suffer from varying degrees of visual impairment, making it crucial to leverage AI technology to provide **walking assistance**.
+## Overview
 
-With the recent progress of **vision-language models (VLMs)**, applying them for walking guidance has become increasingly popular. However:
+WalkVLM-LR is a walking assistance model designed to improve navigation for individuals with visual impairments. It reduces both output and temporal redundancy compared to existing models. By using human-preference-based custom reward functions and an environment awareness discriminator, WalkVLM-LR generates concise, accurate, and context-appropriate guidance while minimizing unnecessary reminders. Experimental results show it outperforms other models, particularly in output conciseness and reducing temporal redundancy.
 
-- Existing methods are mainly based on **self-curated QA datasets** that are **not publicly accessible**, lacking a **standardized benchmark**.
-- Walking assistance often requires **real-time video analysis** and **concise, informative reminders**, but current VLMs struggle due to **long responses** and **low inference efficiency**.
+## Installation
 
-✨ **Our contributions**:
-1. We introduce the **first large-scale walking assistance dataset**, comprising **12,000 video–annotation pairs**, serving as a unified benchmark for training and evaluation.
-2. We propose **WalkVLM**, which:
-   - Employs **chain-of-thought hierarchical planning** to generate concise but informative reminders.
-   - Utilizes **temporal-aware adaptive prediction** to reduce redundancy in reminders.
-3. We establish a **solid benchmark** for the blind walking task and verify the advantages of WalkVLM in **streaming video processing** compared to other VLMs.
+### Prerequisites
 
----
+- CUDA 12.4
+- Python 3.11
+- PyTorch 2.6.0
 
-<!-- Approximately 200 million individuals around the world suffer from varying degrees of visual impairment, making it crucial to leverage AI technology to offer walking assistance for these people. With the recent progress of vision-language models (VLMs), applying VLMs to offer walking guidance has become popular. However, the existing methods of walking guidance are mainly based on self-curated question-answering datasets that are not publicly accessible, without a standardized benchmark for training or evaluation. Moreover, walking assistance often requires real-time streaming video analysis and the generation of concise yet informative reminders, making VLMs struggle due to excessive responses and low efficiency in inferences. In this paper, we introduce the first large-scale dataset dedicated to walking assistance, comprising 12,000 video-annotation pairs, to provide a unified benchmark for training and evaluating systems to help visually-impaired individuals walk. Furthermore, a WalkVLM model is proposed, which employs chain of thought for hierarchical planning to generate concise but informative reminders and utilizes temporal-aware adaptive prediction to reduce the temporal redundancy of reminders. Finally, we have established a solid benchmark for blind walking task and verified the advantages of WalkVLM in stream video processing for this task compared to other VLMs. -->
-## 🛰️ Method & Dataset
+### Setup
 
-<!-- Figure 1 -->
-<div align="center">
-  <img src="figures/img1.png" alt="Visualization results of the WAD dataset by region" width="85%">
-  <div style="width:85%; text-align:justify; margin-top:6px;">
-    <b>Fig. 1 —</b> Visualization results of the WAD dataset sorted by region. The WAD dataset has a wide range of sources, and the categories shown are randomly sampled from the dataset. The pie chart in the lower-left corner shows the proportion of video length from different regions.
-  </div>
-</div>
+```bash
+# Clone the repository
+git clone https://github.com/huggingface/open-r1.git
 
-<!-- Figure 2 -->
-<div align="center">
-  <img src="figures/img2.png" alt="Overview of the proposed WalkVLM framework" width="85%">
-  <div style="width:85%; text-align:justify; margin-top:6px;">
-    <b>Fig. 2 —</b> An overview of the proposed <i>WalkVLM</i> framework. WalkVLM employs CoT-based hierarchical planning to summarize the static attributes and understanding of scenes, thereby facilitating the subsequent reminder and QA tasks. Furthermore, temporal-aware adaptive prediction has been proposed to calculate the trigger state of VLM, thereby reducing the temporal redundancy of outputs.
-  </div>
-</div>
-
-
-
-## 📂 Code structure
-
+# Install dependencies
+pip install --upgrade pip
+pip install vllm==0.8.5.post1
+pip install setuptools && pip install flash-attn --no-build-isolation
+GIT_LFS_SKIP_SMUDGE=1 pip install -e ".[dev]"
 ```
-.
-├── wad_dataset               # Dataset used in WalkVLM
-└── WalkVLM-LR                # WalkVLM reasoning code
-    ├── checkpoint            # Pretrained weights
-    ├── vlm_grpo_template     # GRPO training template
-    ├── EAD.py                # EAD model code
-    ├── GPTScore.py           # GPTScore calculation code
-    ├── inference.py          # Inference script
-    ├── test.py               # Testing script
-    └── train_EAD.py          # EAD model training script
+<!-- Next, log into your Hugging Face and Weights and Biases accounts as follows:
+
+```shell
+huggingface-cli login
+wandb login
 ```
 
-## 📖 Citation
-If you feel this code helpful or use this code or dataset, please cite it as
+Finally, check whether your system has Git LFS installed so that you can load and push models/datasets to the Hugging Face Hub:
+
+```shell
+git-lfs --version
 ```
-Z. Yuan et al., "WalkVLM: Aid Visually Impaired People Walking by Vision Language Model," arXiv preprint arXiv:2412.20903, Dec. 30, 2024.
+
+If it isn't installed, run:
+
+```shell
+sudo apt-get install git-lfs
+``` -->
+
+## Training
+
+We use GRPO to fine-tune WalkVLM-LR.
+
+### GRPO Training Command
+
+```bash
+# Run the training script
+cd vlm_grpo_template
+bash run_grpo_query_gene.sh
 ```
-    
+
+### GRPO Training Configuration
+
+You can modify the training parameters in the `run_grpo_query_gene.sh` script, including:
+- output_dir
+- max_prompt_length
+- num_train_epochs
+- dataset_path 
+
+### EAD Training Command
+Configure the data path in trainEAD.py, then run the training code to train the EAD model.
+```bash
+python -m torch.distributed.launch --nproc_per_node=8 train_EAD.py
+```
+
+## Testing Command
+Modify the checkpoint_path and image_paths in test.py, and then proceed with the testing. The pre-trained weights for CLIP and the related parameters for the GPT-4 API need to be configured manually.
+```bash
+python test.py
+```
+
+
+## Inference Command
+Modify the checkpoint_path and image_paths (with a limit of three images per input) in inference.py, and then perform the inference.
+
+```bash
+python inference.py
+```
+
+## Contact
+
+For questions and feedback, please open an issue and contact.
